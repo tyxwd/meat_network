@@ -2,6 +2,8 @@ import matplotlib.pyplot as m_plot
 import pandas
 import os
 import json
+# 画热力图的包
+import seaborn
 
 
 class Meat_Network():
@@ -109,7 +111,7 @@ class Meat_Network():
             cls.meat_plot.plot([source_x, target_x], [1, 3], color="r", linewidth=line_weight / 10)
 
     @classmethod
-    def paint_excel(cls, point_file_path, line_file_path, Neg_Pos, image_index):
+    def paint_network(cls, point_file_path, line_file_path, Neg_Pos, image_index):
         # point_excel = pandas.read_excel(point_file_path)
         line_excel = pandas.read_excel(line_file_path)
 
@@ -121,6 +123,13 @@ class Meat_Network():
 
         # 连线
         cls.paint_line(line_excel, source_class_list, target_class_list, Neg_Pos)
+
+    @classmethod
+    def paint_heatmap(cls, corr_excel, Neg_Pos=None, image_index=None):
+        # seaborn.heatmap(corr_excel, cmap="RdYlBu_r")
+        # center = 0, 中间颜色的值
+        seaborn.clustermap(corr_excel, cmap="RdYlBu_r", linewidths=0.15, linecolor="k")
+
 
     @classmethod
     def start(cls):
@@ -136,10 +145,13 @@ class Meat_Network():
             point_file_path = cls.init_data_path + "\\" + dir + "\\" + point_file
             line_file_path = cls.init_data_path + "\\" + dir + "\\" + line_file
             print(point_file_path)
-            cls.paint_excel(point_file_path, line_file_path, "Positive", 2 * index + 1)
-            cls.paint_excel(point_file_path, line_file_path, "Negative", 2 * index + 2)
+            cls.paint_network(point_file_path, line_file_path, "Positive", 2 * index + 1)
+            cls.paint_network(point_file_path, line_file_path, "Negative", 2 * index + 2)
         cls.meat_plot.savefig("fig.eps")
 
 
 if __name__ == '__main__':
-    Meat_Network.start()
+    # Meat_Network.start()
+    excel = pandas.read_excel("./F_R_data/Ap_negative_corr.xlsx", index_col=0)
+    Meat_Network.paint_heatmap(excel)
+    Meat_Network.meat_plot.show()
