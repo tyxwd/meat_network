@@ -8,13 +8,24 @@ import seaborn
 
 class Meat_Network():
     meat_plot = m_plot
+    seaborn_heatmap = seaborn
     current_path = None
     init_data_path = None
     treat_dirs = None
     class_index_dict = None
     class_CN_dict = None
-    meat_plot_rows = 6
+    meat_plot_rows = 2
     meat_plot_cols = 2
+
+    meat_plot.subplots_adjust(hspace=1)
+    """"
+    subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=None)
+    # 参数说明：
+    top、bottom、left、right：整个图距离上下左右边框的距离
+    wspace、hspace：这个才是调整各个子图之间的间距
+    wspace：调整子图之间的横向间距
+    hspace：调整子图之间纵向间距
+    """
 
     def __init__(self):
         super()
@@ -61,7 +72,9 @@ class Meat_Network():
         elif Neg_Pos == "Positive":
             line_excel = line_excel[line_excel["Neg_Pos"]=="Positive"]
         source_class_list = cls.get_unique_list(list(line_excel["Source"]))
+        source_class_list.sort()
         target_class_list = cls.get_unique_list(list(line_excel["Target"]))
+        target_class_list.sort()
         for source_or_target in ["Source", "Target"]:
             enumerate_list = None
             if source_or_target == "Source":
@@ -73,23 +86,28 @@ class Meat_Network():
             for index, meat_class in enumerate(enumerate_list):
                 # 获取该class的横坐标x值，
                 meat_class_x = index
+
                 # 该class的宽度；
+                # value_counts():是一种查看表格某列中有多少个不同值的快捷方法，并计算每个不同值有在该列中有多少重复值。
                 meat_class_width = line_excel[source_or_target].value_counts()[meat_class]
 
                 # 如果是N源则为黄色，否则为蓝色
                 color = "y" if cls.class_CN_dict[meat_class] == "N" else "b"
 
                 if source_or_target == "Source":
-                    cls.meat_plot.scatter(meat_class_x, point_y, color=color, linewidths=meat_class_width / 20, marker="|")
-                    cls.meat_plot.text(meat_class_x, point_y - 0.05, cls.class_index_dict[meat_class], rotation="vertical",
-                                horizontalalignment="center", verticalalignment="top")
+                    cls.meat_plot.scatter(meat_class_x, point_y, color=color, linewidths=meat_class_width / 4,
+                                          marker="|")
+                    cls.meat_plot.text(meat_class_x, point_y - 0.15, cls.class_index_dict[meat_class],
+                                       rotation="vertical",
+                                       horizontalalignment="center", verticalalignment="top", fontsize=5)
                 elif source_or_target == "Target":
-                    cls.meat_plot.scatter(meat_class_x, point_y, color=color, linewidths=meat_class_width / 20, marker="|")
+                    cls.meat_plot.scatter(meat_class_x, point_y, color=color, linewidths=meat_class_width / 4,
+                                          marker="|")
                     # verticalalignment设置垂直对齐方式：center, top, bottom, baseline
                     # horizontalalignment设置水平对齐方式：left, right, center
                     # rotation设置旋转角度：vertical, horizontal, 也可以为数字。
-                    m_plot.text(meat_class_x, 3.05, cls.class_index_dict[meat_class], rotation="vertical",
-                                horizontalalignment="center")
+                    m_plot.text(meat_class_x, point_y + 0.15, cls.class_index_dict[meat_class], rotation="vertical",
+                                horizontalalignment="center", fontsize=5)
 
         # 返回class_list, 方便画line时获取x的值；
         return source_class_list, target_class_list
@@ -108,10 +126,10 @@ class Meat_Network():
             source_x = soure_class_list.index(source_class)
             target_x = target_class_list.index(target_class)
             line_weight = line_excel.iloc[index][6]
-            cls.meat_plot.plot([source_x, target_x], [1, 3], color="r", linewidth=line_weight / 10)
+            cls.meat_plot.plot([source_x, target_x], [1, 3], color="r", linewidth=line_weight / 50)
 
     @classmethod
-    def paint_network(cls, point_file_path, line_file_path, Neg_Pos, image_index):
+    def paint_network(cls, line_file_path, Neg_Pos, image_index):
         # point_excel = pandas.read_excel(point_file_path)
         line_excel = pandas.read_excel(line_file_path)
 
@@ -125,13 +143,15 @@ class Meat_Network():
         cls.paint_line(line_excel, source_class_list, target_class_list, Neg_Pos)
 
     @classmethod
-    def paint_heatmap(cls, corr_excel, Neg_Pos=None, image_index=None):
+    def paint_heatmap(cls, corr_excel, image_index=None, Neg_Pos=None, ):
         # seaborn.heatmap(corr_excel, cmap="RdYlBu_r")
         # center = 0, 中间颜色的值
-        seaborn.clustermap(corr_excel, cmap="RdYlBu_r", linewidths=0.15, linecolor="k")
+        cls.meat_plot.subplot(cls.meat_plot_rows, cls.meat_plot_cols, image_index)
+        cls.seaborn_heatmap.clustermap(corr_excel, cmap="RdYlBu_r", linewidths=0.15, linecolor="k")
 
 
     @classmethod
+    # 之前的图，有问题，现在不管了
     def start(cls):
         # 先获得文件夹位置
         cls.get_treat_dirs()
@@ -145,13 +165,22 @@ class Meat_Network():
             point_file_path = cls.init_data_path + "\\" + dir + "\\" + point_file
             line_file_path = cls.init_data_path + "\\" + dir + "\\" + line_file
             print(point_file_path)
-            cls.paint_network(point_file_path, line_file_path, "Positive", 2 * index + 1)
-            cls.paint_network(point_file_path, line_file_path, "Negative", 2 * index + 2)
+            cls.paint_network(line_file_path, "Positive", 2 * index + 1)
+            cls.paint_network(line_file_path, "Negative", 2 * index + 2)
         cls.meat_plot.savefig("fig.eps")
 
 
 if __name__ == '__main__':
-    # Meat_Network.start()
-    excel = pandas.read_excel("./F_R_data/Ap_negative_corr.xlsx", index_col=0)
-    Meat_Network.paint_heatmap(excel)
-    Meat_Network.meat_plot.show()
+    Meat_Network.get_shorted()
+    Meat_Network.get_CN_dict()
+
+    species = ["Ap", "As"]
+    for index, specie in enumerate(species):
+        line_file_path = "./F_R_data/%s_class_line.xlsx"
+        corr_excel_path = "./F_R_data/%s_%s_corr.xlsx"
+        print(line_file_path)
+        print(corr_excel_path)
+        Meat_Network.paint_network(line_file_path % specie, "Positive", 2 * index + 1)
+        Meat_Network.paint_network(line_file_path % specie, "Negative", 2 * index + 2)
+
+    Meat_Network.meat_plot.savefig("fig.eps")

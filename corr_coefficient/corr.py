@@ -4,7 +4,7 @@ import scipy.stats as stats
 
 
 class Corr_Utils:
-    index_number_excel = pandas.read_excel("./init_data/index_number.xlsx")
+    index_number_excel = None
 
     def __init__(self):
         super()
@@ -59,12 +59,12 @@ class Corr_Utils:
                 # 负相关
                 if item < 0:
                     id += 1
-                    line_list = [source, target, "Undirected", id, None, None, item, "Negative"]
+                    line_list = [source, target, "Undirected", id, None, None, abs(item), "Negative"]
                     line_excel_list_dict = dict(zip(line_excel_col_index, line_list))
                     line_excel = line_excel.append([line_excel_list_dict], ignore_index=False)
                 elif item > 0:
                     id += 1
-                    line_list = [source, target, "Undirected", id, None, None, item, "Positive"]
+                    line_list = [source, target, "Undirected", id, None, None, abs(item), "Positive"]
                     line_excel_list_dict = dict(zip(line_excel_col_index, line_list))
                     line_excel = line_excel.append([line_excel_list_dict], ignore_index=False)
         return line_excel
@@ -103,7 +103,6 @@ class Corr_Utils:
         columns = list(compound_line_excel.columns)
         # 获得每个列是第几列；
         target_col = columns.index("Target")
-        print(target_col)
         source_col = columns.index("Source")
         Neg_Pos_col = columns.index("Neg_Pos")
         for row in range(rows):
@@ -125,32 +124,34 @@ class Corr_Utils:
 
     @classmethod
     def get_class_line_excel(cls, positive_corr_excel, negative_corr_excel):
+        # 两个（positive、negative）的line表格，后面进行合并；
         line_excel_list = []
-        for corr_excel in [positive_corr_excel, negative_corr_excel]:
+        for corr_excel in [positive_corr_excel, negative_corr_excel * -1]:
             line_excel = cls.to_line_excel(corr_excel)
             line_excel_list.append(line_excel)
-        class_line_excel = None
-        for index, line_excel in enumerate(line_excel_list):
-            if index == 0:
-                class_line_excel = line_excel
-                continue
-            elif index > 0:
-                class_line_excel.append(line_excel)
+        # 合并两表格
+        class_line_excel = pandas.concat(line_excel_list)
         return class_line_excel
 
 
 if __name__ == '__main__':
-    species = ["Ap", "As"]
-    for specie in species:
-        file_path = "./init_data/%s_0.01.xlsx" % specie
-        corr_excel = pandas.read_excel(file_path, index_col=0)
-        compound_line_excel = Corr_Utils.to_line_excel(corr_excel)
-        # compound_line_excel.to_excel("line.xlsx")
-        # class 的相关系数；
-        class_positive_excel, class_negative_excel = Corr_Utils.get_class_corr_excel(compound_line_excel)
-        class_positive_excel.to_excel("./out_data/%s_positive_corr.xlsx" % specie)
-        class_negative_excel.to_excel("./out_data/%s_negative_corr.xlsx" % specie)
-
-        # class 的line表格；
-        class_line_excel = Corr_Utils.get_class_line_excel(class_positive_excel, class_negative_excel)
-        class_line_excel.to_excel("./out_data/%s_class_line.xlsx" % specie, index=False)
+    Corr_Utils.index_number_excel = pandas.read_excel("./init_data/index_number.xlsx")
+    # species = ["Ap", "As"]
+    # for specie in species:
+    #     file_path = "./init_data/%s_0.01.xlsx" % specie
+    #     corr_excel = pandas.read_excel(file_path, index_col=0)
+    #     compound_line_excel = Corr_Utils.to_line_excel(corr_excel)
+    #     # compound_line_excel.to_excel("line.xlsx")
+    #     # class 的相关系数；
+    #     print("计算相关系数")
+    #     class_positive_excel, class_negative_excel = Corr_Utils.get_class_corr_excel(compound_line_excel)
+    #     class_positive_excel.to_excel("./out_data/%s_positive_corr.xlsx" % specie)
+    #     class_negative_excel.to_excel("./out_data/%s_negative_corr.xlsx" % specie)
+    #
+    #     # class 的line表格；
+    #     class_line_excel = Corr_Utils.get_class_line_excel(class_positive_excel, class_negative_excel)
+    #     class_line_excel.to_excel("./out_data/%s_class_line.xlsx" % specie, index=False)
+    F_excel = pandas.read_excel(r".\init_data\进R分析数据_不考虑虫子_F.xlsx", sheet_name="Ap-F")
+    R_excel = pandas.read_excel(r".\init_data\进R分析数据_不考虑虫子_R.xlsx", sheet_name="Ap-R")
+    corr_excel = Corr_Utils.get_corr_value(F_excel, R_excel)
+    corr_excel.to_excel("coor.xlsx")
